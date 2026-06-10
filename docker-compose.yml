@@ -1,0 +1,116 @@
+# ============================================
+# AIRA — Docker Compose Production Stack
+# ============================================
+# Usage: docker-compose up --build
+# ============================================
+
+services:
+  # ---------- Frontend (Nginx) ----------
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+      args:
+        VITE_API_URL: ${VITE_API_URL:-http://localhost:5000}
+    ports:
+      - "3000:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - aira-network
+
+  # ---------- Backend (Flask + Gunicorn) ----------
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    ports:
+      - "5000:5000"
+    environment:
+      - FLASK_ENV=${FLASK_ENV:-production}
+      - SECRET_KEY=${SECRET_KEY:-change-me-in-production}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY:-change-me-in-production}
+      - JWT_ACCESS_TOKEN_EXPIRES=${JWT_ACCESS_TOKEN_EXPIRES:-3600}
+      - JWT_REFRESH_TOKEN_EXPIRES=${JWT_REFRESH_TOKEN_EXPIRES:-2592000}
+      - MONGODB_URI=mongodb://mongodb:27017/aira
+      - MONGODB_DB_NAME=${MONGODB_DB_NAME:-aira}
+      - OLLAMA_BASE_URL=http://ollama:11434
+      - OLLAMA_DEFAULT_MODEL=${OLLAMA_DEFAULT_MODEL:-qwen3-coder}
+      - OLLAMA_EMBEDDING_MODEL=${OLLAMA_EMBEDDING_MODEL:-nomic-embed-text}
+      - OLLAMA_REQUEST_TIMEOUT=${OLLAMA_REQUEST_TIMEOUT:-120}
+      - CHROMADB_PATH=/app/data/embeddings
+      - MAX_UPLOAD_SIZE_MB=${MAX_UPLOAD_SIZE_MB:-100}
+      - UPLOAD_FOLDER=/app/data/uploads
+      - WORKSPACE_FOLDER=/app/data/workspace
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - LOG_FILE=/app/logs/aira.log
+      - CORS_ORIGINS=http://localhost:3000,http://localhost:5173
+      - RATELIMIT_STORAGE_URL=${RATELIMIT_STORAGE_URL:-memory://}
+    volumes:
+      - aira-uploads:/app/data/uploads
+      - aira-embeddings:/app/data/embeddings
+      - aira-workspace:/app/data/workspace
+      - aira-logs:/app/logs
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      ollama:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    restart: unless-stopped
+    networks:
+      - aira-network
+
+  # ---------- MongoDB ----------
+  mongodb:
+    image: mongo:7
+    ports:
+      - "27017:27017"
+    volumes:
+      - aira-mongodb:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+    networks:
+      - aira-network
+
+  # ---------- Ollama ----------
+  ollama:
+    image: ollama/ollama:latest
+    ports:
+      - "11434:11434"
+    volumes:
+      - aira-ollama:/root/.ollama
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    restart: unless-stopped
+    networks:
+      - aira-network
+
+volumes:
+  aira-mongodb:
+  aira-ollama:
+  aira-uploads:
+  aira-embeddings:
+  aira-workspace:
+  aira-logs:
+
+networks:
+  aira-network:
+    driver: bridge

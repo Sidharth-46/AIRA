@@ -1,0 +1,346 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+@import "tailwindcss";
+
+/* ============================================
+   AIRA Design System — Professional Dark
+   Inspired by ChatGPT, Claude, Cursor, Linear
+   ============================================ */
+
+/* ---------- Theme Variables ---------- */
+@theme {
+  --color-aira-bg: #0A0A0B;
+  --color-aira-surface: #111214;
+  --color-aira-surface-2: #111214;
+  --color-aira-surface-3: #16181D;
+  --color-aira-border: #262A33;
+  --color-aira-border-light: #2E3340;
+  --color-aira-text: #FFFFFF;
+  --color-aira-text-muted: #A1A1AA;
+  --color-aira-text-dim: #71717A;
+  --color-aira-primary: #6366F1;
+  --color-aira-primary-hover: #818CF8;
+  --color-aira-accent: #6366F1;
+  --color-aira-accent-2: #A78BFA;
+  --color-aira-success: #22C55E;
+  --color-aira-warning: #F59E0B;
+  --color-aira-error: #EF4444;
+
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+}
+
+html.light {
+  --color-aira-bg: #F9FAFB;
+  --color-aira-surface: #FFFFFF;
+  --color-aira-surface-2: #F3F4F6;
+  --color-aira-surface-3: #E5E7EB;
+  --color-aira-border: #D1D5DB;
+  --color-aira-border-light: #E5E7EB;
+  --color-aira-text: #111827;
+  --color-aira-text-muted: #6B7280;
+  --color-aira-text-dim: #9CA3AF;
+  --color-aira-primary: #6366F1;
+  --color-aira-primary-hover: #4F46E5;
+  --color-aira-accent: #6366F1;
+  --color-aira-accent-2: #8B5CF6;
+  --color-aira-success: #16A34A;
+  --color-aira-warning: #D97706;
+  --color-aira-error: #DC2626;
+}
+
+/* ---------- Base Styles ---------- */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  background: var(--color-aira-bg);
+  color: var(--color-aira-text);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ---------- Scrollbar ---------- */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-aira-border);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-aira-text-dim);
+}
+
+/* ---------- Buttons ---------- */
+.btn-primary {
+  background: var(--color-aira-primary);
+  color: #FFFFFF;
+  border: none;
+  border-radius: 10px;
+  padding: 0 16px;
+  height: 40px;
+  font-size: 14px;
+  font-weight: 500;
+  font-family: var(--font-sans);
+  cursor: pointer;
+  transition: background 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.btn-primary:hover {
+  background: var(--color-aira-primary-hover);
+}
+
+.btn-primary:active {
+  transform: translateY(1px);
+}
+
+.btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-secondary {
+  background: transparent;
+  color: var(--color-aira-text);
+  border: 1px solid var(--color-aira-border);
+  border-radius: 10px;
+  padding: 0 16px;
+  height: 40px;
+  font-size: 14px;
+  font-weight: 500;
+  font-family: var(--font-sans);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.btn-secondary:hover {
+  background: var(--color-aira-surface-3);
+  border-color: var(--color-aira-border-light);
+}
+
+/* Keep legacy class for compatibility */
+.btn-gradient {
+  background: var(--color-aira-primary);
+  color: #FFFFFF;
+  border: none;
+  border-radius: 10px;
+  padding: 0 16px;
+  height: 40px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.btn-gradient:hover {
+  background: var(--color-aira-primary-hover);
+}
+
+.btn-gradient:active {
+  transform: translateY(1px);
+}
+
+/* ---------- Cards ---------- */
+.card {
+  background: var(--color-aira-surface-3);
+  border: 1px solid var(--color-aira-border);
+  border-radius: 12px;
+  transition: border-color 0.15s ease;
+}
+
+.card:hover {
+  border-color: var(--color-aira-border-light);
+}
+
+/* Legacy compat */
+.glass-card {
+  background: var(--color-aira-surface-3);
+  border: 1px solid var(--color-aira-border);
+  border-radius: 12px;
+  transition: border-color 0.15s ease;
+}
+
+.glass-card:hover {
+  border-color: var(--color-aira-border-light);
+}
+
+.glass {
+  background: var(--color-aira-surface-3);
+  border: 1px solid var(--color-aira-border);
+}
+
+/* ---------- Animations ---------- */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes pulse-skeleton {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+.animate-fade-in { animation: fadeIn 0.2s ease-out; }
+.animate-slide-up { animation: slideUp 0.3s ease-out; }
+.animate-blink { animation: blink 1s infinite; }
+.animate-spin { animation: spin 1s linear infinite; }
+.animate-shimmer {
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.03), transparent);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+.animate-pulse-skeleton {
+  animation: pulse-skeleton 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  background-color: var(--color-aira-surface-3);
+}
+
+/* ---------- Code Blocks ---------- */
+pre {
+  background: var(--color-aira-surface) !important;
+  border: 1px solid var(--color-aira-border);
+  border-radius: 8px;
+  padding: 16px;
+  overflow-x: auto;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+code {
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+}
+
+p code {
+  background: var(--color-aira-surface-3);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 0.85em;
+  color: var(--color-aira-accent-2);
+}
+
+/* ---------- Input Styles ---------- */
+input, textarea, select {
+  background: var(--color-aira-surface);
+  border: 1px solid var(--color-aira-border);
+  border-radius: 10px;
+  padding: 12px 16px;
+  height: 44px;
+  color: var(--color-aira-text);
+  font-family: var(--font-sans);
+  font-size: 15px;
+  transition: border-color 0.15s ease;
+  outline: none;
+  width: 100%;
+}
+
+textarea {
+  height: auto;
+}
+
+input:focus, textarea:focus, select:focus {
+  border-color: var(--color-aira-primary);
+}
+
+input::placeholder, textarea::placeholder {
+  color: var(--color-aira-text-dim);
+}
+
+/* ---------- Selection ---------- */
+::selection {
+  background: var(--color-aira-primary);
+  color: white;
+}
+
+/* ---------- Prose Overrides ---------- */
+.prose {
+  --tw-prose-body: var(--color-aira-text);
+  --tw-prose-headings: var(--color-aira-text);
+  --tw-prose-links: var(--color-aira-primary);
+  --tw-prose-bold: var(--color-aira-text);
+  --tw-prose-code: var(--color-aira-accent-2);
+  --tw-prose-pre-bg: var(--color-aira-surface);
+  line-height: 1.7;
+  font-size: 15px;
+}
+
+.prose h1, .prose h2, .prose h3, .prose h4 {
+  color: var(--color-aira-text);
+  font-weight: 600;
+}
+
+.prose p {
+  margin-bottom: 12px;
+}
+
+.prose ul, .prose ol {
+  margin-bottom: 12px;
+}
+
+.prose a {
+  color: var(--color-aira-primary);
+  text-decoration: none;
+}
+
+.prose a:hover {
+  text-decoration: underline;
+}
+
+.prose strong {
+  color: var(--color-aira-text);
+  font-weight: 600;
+}
+
+.prose blockquote {
+  border-left: 3px solid var(--color-aira-border);
+  padding-left: 16px;
+  color: var(--color-aira-text-muted);
+}

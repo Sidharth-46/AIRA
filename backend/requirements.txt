@@ -1,0 +1,35 @@
+# AIRA Backend Dependencies
+# Flask & Extensions
+flask==3.1.1
+flask-cors==5.0.1
+flask-jwt-extended==4.7.1
+flask-limiter==3.12
+
+# Database
+pymongo==4.12.1
+
+# Authentication
+bcrypt==4.3.0
+
+# AI / Ollama
+ollama==0.4.8
+
+# RAG / Embeddings
+chromadb==0.6.3
+langchain-text-splitters==0.3.8
+
+# Document Processing
+pypdf==5.4.0
+python-docx==1.1.2
+
+# Server
+gunicorn==23.0.0
+gevent==24.11.1
+
+# Utilities
+python-dotenv==1.1.0
+marshmallow==3.26.1
+
+# Security
+python-magic-bin==0.4.14; sys_platform == 'win32'
+python-magic==0.4.27; sys_platform != 'win32'

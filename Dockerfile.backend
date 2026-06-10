@@ -1,0 +1,44 @@
+# ============================================
+# AIRA Backend — Python Docker Build
+# ============================================
+
+FROM python:3.11-slim
+
+# System dependencies for document processing
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    libmagic1 \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create non-root user
+RUN useradd --create-home --shell /bin/bash aira
+
+WORKDIR /app
+
+# Install Python deps
+COPY backend/requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy application code
+COPY backend/ .
+
+# Create data directories
+RUN mkdir -p /app/data/uploads /app/data/embeddings /app/data/workspace /app/logs \
+    && chown -R aira:aira /app
+
+USER aira
+
+EXPOSE 5000
+
+HEALTHCHECK --interval=30s --timeout=10s --retries=3 \
+    CMD curl -f http://localhost:5000/api/health || exit 1
+
+# Gunicorn with gevent for SSE streaming support
+CMD ["gunicorn", \
+     "--worker-class", "gevent", \
+     "--workers", "4", \
+     "--bind", "0.0.0.0:5000", \
+     "--timeout", "300", \
+     "--keep-alive", "65", \
+     "app:create_app()"]
