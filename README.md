@@ -1,6 +1,6 @@
 # AIRA - Autonomous Intelligent Reasoning Agent
 
-![AIRA Logo Placeholder](https://via.placeholder.com/150)
+![AIRA Logo](public/aira-logo.png)
 
 **Think. Reason. Build.**
 
