@@ -1,6 +1,6 @@
 # AIRA - Autonomous Intelligent Reasoning Agent
 
-![AIRA Logo]("C:\Users\sidha\Pictures\Photoshop\aira.png")
+![AIRA Logo](pics/aira.png)
 
 **Think. Reason. Build.**
 
