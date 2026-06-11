@@ -1,6 +1,6 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useWorkspaceStore } from '../../stores/workspaceStore'
-import { chatService } from '../../services'
+import { workspaceService } from '../../services'
 import {
   HiOutlineLightBulb,
   HiOutlineCode,
@@ -40,7 +40,38 @@ export default function CopilotPanel() {
   const [loading, setLoading] = useState(false)
   const [streamingContent, setStreamingContent] = useState('')
   const messagesEndRef = useRef(null)
-  const [chatId, setChatId] = useState(null)
+
+  // Fetch chat history when project changes or panel opens
+  useEffect(() => {
+    if (copilotOpen && activeProjectId) {
+      loadHistory()
+    }
+  }, [copilotOpen, activeProjectId])
+
+  const loadHistory = async () => {
+    try {
+      const res = await workspaceService.getChat(activeProjectId)
+      if (res.data?.chat?.messages) {
+        setMessages(res.data.chat.messages)
+        setTimeout(scrollToBottom, 100)
+      } else {
+        setMessages([])
+      }
+    } catch (err) {
+      console.error('Failed to load copilot history', err)
+      setMessages([])
+    }
+  }
+
+  const handleClearChat = async () => {
+    if (!activeProjectId) return
+    try {
+      await workspaceService.clearChat(activeProjectId)
+      setMessages([])
+    } catch (err) {
+      console.error('Failed to clear chat', err)
+    }
+  }
 
   if (!copilotOpen) return null
 
@@ -48,33 +79,13 @@ export default function CopilotPanel() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }
 
-  const initChat = async () => {
-    if (chatId) return chatId
-    try {
-      const res = await chatService.createChat({ title: `Copilot: ${activeProjectName || 'Workspace'}` })
-      const id = res.data?.chat?.id || res.data?.id
-      setChatId(id)
-      return id
-    } catch (err) {
-      console.error('Failed to create copilot chat', err)
-      return null
-    }
-  }
-
   const sendMessage = async (content) => {
     if (!content.trim() || loading) return
 
-    // Build context prefix
-    let contextPrefix = ''
-    if (activeFile) {
-      contextPrefix = `[Context: Project "${activeProjectName || 'Unknown'}", File: ${activeFile.path}]\n\n`
-      if (activeFile.content) {
-        const preview = activeFile.content.substring(0, 3000)
-        contextPrefix += `Current file content:\n\`\`\`\n${preview}\n\`\`\`\n\n`
-      }
-    }
-
-    const fullContent = contextPrefix + content
+    // Backend workspaceContextBuilder handles context injection automatically now.
+    // We do NOT need to prepend context text manually!
+    
+    // Just send the user's raw message to the workspace chat.
 
     setMessages((prev) => [...prev, { role: 'user', content }])
     setInput('')
@@ -82,18 +93,13 @@ export default function CopilotPanel() {
     setStreamingContent('')
 
     try {
-      const id = await initChat()
-      if (!id) {
-        setMessages((prev) => [...prev, { role: 'assistant', content: 'Failed to initialize copilot chat.' }])
+      if (!activeProjectId) {
+        setMessages((prev) => [...prev, { role: 'assistant', content: 'No active project selected.' }])
         setLoading(false)
         return
       }
 
-      const workspaceContext = activeProjectId
-        ? { projectId: activeProjectId, currentFile: activeFile?.path }
-        : null
-
-      const response = await chatService.sendMessage(id, fullContent, workspaceContext)
+      const response = await workspaceService.sendMessage(activeProjectId, content, activeFile?.path)
       const reader = response.body.getReader()
       const decoder = new TextDecoder()
       let accumulated = ''
@@ -163,18 +169,23 @@ export default function CopilotPanel() {
   }
 
   return (
-    <div className="copilot-panel">
+    <div className="copilot-panel flex flex-col h-full bg-aira-surface">
       {/* Header */}
-      <div className="copilot-header">
-        <div className="copilot-header-title">
-          <svg className="w-4 h-4 text-aira-primary" viewBox="0 0 24 24" fill="currentColor">
+      <div className="copilot-header flex items-center justify-between p-4 border-b border-aira-border">
+        <div className="copilot-header-title flex items-center gap-2 font-medium text-aira-text">
+          <svg className="w-5 h-5 text-aira-primary" viewBox="0 0 24 24" fill="currentColor">
             <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
           </svg>
           <span>AIRA Copilot</span>
         </div>
-        <button onClick={toggleCopilot} className="copilot-close-btn">
-          <HiOutlineX className="w-4 h-4" />
-        </button>
+        <div className="flex items-center gap-2">
+          <button onClick={handleClearChat} className="p-1.5 text-aira-text-dim hover:text-aira-text rounded transition-colors" title="Clear Chat">
+            <HiOutlineRefresh className="w-4 h-4" />
+          </button>
+          <button onClick={toggleCopilot} className="p-1.5 text-aira-text-dim hover:text-aira-text rounded transition-colors" title="Close Panel">
+            <HiOutlineX className="w-4 h-4" />
+          </button>
+        </div>
       </div>
 
       {/* Context badge */}
@@ -242,18 +253,24 @@ export default function CopilotPanel() {
       </div>
 
       {/* Input */}
-      <form onSubmit={handleSubmit} className="copilot-input-area">
-        <input
-          type="text"
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          placeholder={activeFile ? `Ask about ${activeFile.name}...` : 'Ask AIRA anything...'}
-          disabled={loading}
-          className="copilot-input"
-        />
-        <button type="submit" disabled={loading || !input.trim()} className="copilot-send-btn">
-          <HiOutlineChevronRight className="w-4 h-4" />
-        </button>
+      <form onSubmit={handleSubmit} className="p-4 border-t border-aira-border bg-aira-surface-3">
+        <div className="relative flex items-center bg-aira-surface border border-aira-border focus-within:border-aira-primary rounded-lg transition-colors overflow-hidden">
+          <input
+            type="text"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            placeholder={activeFile ? `Ask about ${activeFile.name}...` : 'Ask AIRA anything...'}
+            disabled={loading}
+            className="w-full bg-transparent border-none text-aira-text text-sm px-4 py-3 focus:outline-none placeholder-aira-text-dim"
+          />
+          <button 
+            type="submit" 
+            disabled={loading || !input.trim()} 
+            className={`p-2 mr-2 rounded-md transition-colors ${input.trim() ? 'text-aira-primary hover:bg-aira-primary/10' : 'text-aira-text-dim'}`}
+          >
+            <HiOutlineChevronRight className="w-5 h-5" />
+          </button>
+        </div>
       </form>
     </div>
   )

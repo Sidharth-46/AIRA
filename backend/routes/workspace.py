@@ -9,6 +9,9 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 from services.workspace_service import WorkspaceService
 from utils.validators import validate_request, FileCreateSchema
 from utils.logger import get_logger
+import json
+from flask import Response, stream_with_context
+from services.workspace_chat_service import WorkspaceChatService
 
 logger = get_logger("routes.workspace")
 
@@ -149,3 +152,70 @@ def search_files():
         return jsonify({"error": error}), 500
 
     return jsonify({"results": results, "count": len(results)}), 200
+
+
+@workspace_bp.route("/chat/<project_id>", methods=["GET"])
+@jwt_required()
+def get_workspace_chat(project_id):
+    """Get the workspace chat history for a project."""
+    user_id = get_jwt_identity()
+    chat, error = WorkspaceChatService.get_chat(project_id, user_id)
+    if error:
+        return jsonify({"error": error}), 404
+    return jsonify({"chat": chat}), 200
+
+
+@workspace_bp.route("/chat/<project_id>", methods=["DELETE"])
+@jwt_required()
+def clear_workspace_chat(project_id):
+    """Clear the workspace chat history for a project."""
+    user_id = get_jwt_identity()
+    chat, error = WorkspaceChatService.clear_chat(project_id, user_id)
+    if error:
+        return jsonify({"error": error}), 404
+    return jsonify({"message": "Workspace chat cleared", "chat": chat}), 200
+
+
+@workspace_bp.route("/chat/<project_id>", methods=["POST"])
+@jwt_required()
+def send_workspace_message(project_id):
+    """Send a message to the workspace chat and stream response via SSE."""
+    user_id = get_jwt_identity()
+    data = request.get_json(silent=True) or {}
+    content = data.get("message")
+    current_file = data.get("currentFile")
+    
+    if not content:
+        return jsonify({"error": "Message content required"}), 400
+
+    generator, error = WorkspaceChatService.send_message(
+        project_id=project_id, 
+        user_id=user_id, 
+        content=content, 
+        current_file=current_file
+    )
+    
+    if error:
+        return jsonify({"error": error}), 500
+
+    def sse_stream():
+        try:
+            for event in generator:
+                event_type = event.get("event", "message")
+                event_data = event.get("data", "")
+                yield f"event: {event_type}\ndata: {json.dumps(event_data)}\n\n"
+        except GeneratorExit:
+            logger.info(f"SSE stream closed by client for workspace chat {project_id}")
+        except Exception as exc:
+            logger.error(f"SSE stream error: {exc}")
+            yield f"event: error\ndata: {json.dumps(str(exc))}\n\n"
+
+    return Response(
+        stream_with_context(sse_stream()),
+        mimetype="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "X-Accel-Buffering": "no",
+            "Connection": "keep-alive",
+        },
+    )

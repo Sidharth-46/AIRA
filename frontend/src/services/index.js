@@ -58,6 +58,21 @@ export const workspaceService = {
   deleteFile: (path, project) => api.delete('/api/workspace/file', { params: { path, project } }),
   renameFile: (oldPath, newPath, project) => api.patch('/api/workspace/file', { old_path: oldPath, new_path: newPath, project }),
   search: (q, project) => api.get('/api/workspace/search', { params: { q, project } }),
+
+  // Workspace Copilot Chat
+  getChat: (project) => api.get(`/api/workspace/chat/${project}`),
+  clearChat: (project) => api.delete(`/api/workspace/chat/${project}`),
+  sendMessage: (project, message, currentFile = null) => {
+    const token = localStorage.getItem('aira_token')
+    return fetch(`/api/workspace/chat/${project}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ message, currentFile }),
+    })
+  },
 }
 
 export const gitService = {
