@@ -38,3 +38,7 @@ See [docs/installation.md](docs/installation.md) for full setup instructions.
 - **Frontend**: React, Vite, Tailwind CSS, Zustand, Monaco Editor
 - **Backend**: Flask, PyMongo, JWT Extended
 - **AI / DB**: Ollama, MongoDB, ChromaDB, LangChain Splitters
+
+## 📄 License
+
+This project is licensed under the [GNU General Public License v3.0](LICENSE).
