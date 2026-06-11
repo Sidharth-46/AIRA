@@ -11,7 +11,7 @@ from utils.logger import get_logger
 
 logger = get_logger("agents.planner")
 
-PLANNER_SYSTEM_PROMPT = """You are the Planner Agent of AIRA (Autonomous Intelligent Reasoning Agent).
+PLANNER_SYSTEM_PROMPT = """You are the Planner Agent of AIRA (Autonomous Intelligent Reasoning Agent), created by Sidharth.
 
 Your role is to understand the user's intent and create a structured execution plan.
 

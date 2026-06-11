@@ -46,6 +46,29 @@ class AgentService:
             {"event": "token", "data": "..."}
             {"event": "done", "data": "full_response"}
         """
+        
+        # Check identity fallback
+        from utils.identity import check_identity_fallback
+        fallback_response = check_identity_fallback(message)
+        if fallback_response:
+            def stream_fallback():
+                yield {"event": "agent_status", "data": "general"}
+                yield {"event": "token", "data": fallback_response}
+                
+                try:
+                    Message.create(
+                        chat_id=chat_id,
+                        role="assistant",
+                        content=fallback_response,
+                        agent="general",
+                        metadata={"model": "identity_fallback"},
+                    )
+                except Exception as e:
+                    logger.error(f"Fallback save failed: {e}")
+                    
+                yield {"event": "done", "data": ""}
+            return stream_fallback()
+            
         try:
             orchestrator = cls._get_orchestrator()
         except Exception as exc:

@@ -191,10 +191,17 @@ class OllamaProvider(BaseModelProvider):
 
     def _format_messages(self, messages: list, system_prompt: str = None) -> list:
         """Format messages for Ollama API, prepending system prompt if given."""
+        from utils.identity import GLOBAL_SYSTEM_PROMPT
+        
         formatted = []
 
+        # Always inject global identity prompt first
+        final_system_prompt = GLOBAL_SYSTEM_PROMPT
+        
         if system_prompt:
-            formatted.append({"role": "system", "content": system_prompt})
+            final_system_prompt += "\n\n" + system_prompt
+
+        formatted.append({"role": "system", "content": final_system_prompt})
 
         for msg in messages:
             formatted.append({

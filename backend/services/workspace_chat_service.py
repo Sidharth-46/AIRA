@@ -44,6 +44,32 @@ class WorkspaceChatService:
         """
         # Save user message
         WorkspaceChat.add_message(project_id=project_id, user_id=user_id, role="user", content=content)
+        
+        # Check identity fallback
+        from utils.identity import check_identity_fallback
+        fallback_response = check_identity_fallback(content)
+        if fallback_response:
+            def stream_fallback():
+                yield {
+                    "event": "agent_status",
+                    "data": "coder"
+                }
+                yield {
+                    "event": "token",
+                    "data": fallback_response
+                }
+                WorkspaceChat.add_message(
+                    project_id=project_id,
+                    user_id=user_id,
+                    role="assistant",
+                    content=fallback_response,
+                    agent="coder"
+                )
+                yield {
+                    "event": "done",
+                    "data": ""
+                }
+            return stream_fallback(), None
 
         # Build workspace context
         workspace_context = WorkspaceContextBuilder.get_context(
@@ -74,7 +100,7 @@ class WorkspaceChatService:
             # Format messages for router
             # Inject context securely at the very end of history before the final user message, 
             # or into the system prompt.
-            system_prompt = "You are AIRA, an expert AI programming assistant.\n"
+            system_prompt = "You are AIRA, an expert AI programming assistant. AIRA stands for Autonomous Intelligent Reasoning Agent and was created by Sidharth.\n"
             if workspace_context:
                 system_prompt += f"\n\n{workspace_context}\n"
                 
