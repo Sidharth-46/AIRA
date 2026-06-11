@@ -4,7 +4,7 @@ import { useWorkspaceStore } from '../../stores/workspaceStore'
 import { useThemeStore } from '../../stores/themeStore'
 
 export default function MonacoEditor() {
-  const { activeFile, updateFileContent, saveFile } = useWorkspaceStore()
+  const { activeFile, updateFileContent, saveFile, setEditorReady } = useWorkspaceStore()
   const { theme } = useThemeStore()
   const monaco = useMonaco()
   const editorRef = useRef(null)
@@ -27,24 +27,29 @@ export default function MonacoEditor() {
         }
       })
       monaco.editor.setTheme(theme === 'dark' ? 'aira-dark' : 'vs-light')
+      console.log('MONACO_READY')
+      setEditorReady(true)
     }
-  }, [monaco, theme])
+  }, [monaco, theme, setEditorReady])
 
   const handleEditorDidMount = (editor) => {
     editorRef.current = editor
     
     // Add save command directly to editor as fallback
-    editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, () => {
-      const currentModel = editor.getModel()
-      if (currentModel) {
-        const path = currentModel.uri.path.replace(/^\//, '') // simple extraction
-        // In reality activeFile state is better
-        const storeState = useWorkspaceStore.getState()
-        if (storeState.activeFile) {
-          storeState.saveFile(storeState.activeFile.path)
+    if (monaco && editor) {
+      console.log('MONACO_COMMANDS_REGISTERED')
+      editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, () => {
+        const currentModel = editor.getModel()
+        if (currentModel) {
+          const path = currentModel.uri.path.replace(/^\//, '') // simple extraction
+          // In reality activeFile state is better
+          const storeState = useWorkspaceStore.getState()
+          if (storeState.activeFile) {
+            storeState.saveFile(storeState.activeFile.path)
+          }
         }
-      }
-    })
+      })
+    }
   }
 
   const handleContentChange = (value) => {
@@ -115,8 +120,10 @@ export default function MonacoEditor() {
           formatOnPaste: true,
         }}
         loading={
-          <div className="flex items-center justify-center h-full">
-            <div className="w-6 h-6 border-2 border-aira-border border-t-aira-primary rounded-full animate-spin" />
+          <div className="flex items-center justify-center h-full text-aira-text-dim gap-3">
+            <div className="w-5 h-5 border-2 border-aira-border border-t-aira-primary rounded-full animate-spin" />
+            <span className="text-sm">Loading editor...</span>
+            {console.log('MONACO_LOADING')}
           </div>
         }
       />

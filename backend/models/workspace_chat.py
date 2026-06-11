@@ -90,3 +90,11 @@ class WorkspaceChat:
                 msg["timestamp"] = msg["timestamp"].isoformat()
                 
         return chat
+
+    @staticmethod
+    def delete_by_project(project_id, user_id):
+        """Delete all workspace chats associated with a project."""
+        query = {"projectId": str(project_id), "userId": str(user_id)}
+        result = WorkspaceChat._collection().delete_many(query)
+        logger.info(f"Deleted {result.deleted_count} workspace chats for project {project_id}")
+        return result.deleted_count > 0

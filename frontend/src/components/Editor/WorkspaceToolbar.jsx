@@ -1,116 +1,101 @@
 import { useWorkspaceStore } from '../../stores/workspaceStore'
 import { useNavigate } from 'react-router-dom'
 import {
-  HiOutlinePlay,
-  HiOutlineEye,
   HiOutlineSearch,
   HiOutlineTerminal,
-  HiOutlineChevronLeft,
   HiOutlineChat,
   HiOutlineMenu,
-  HiOutlineSave,
 } from 'react-icons/hi'
+import { HiOutlineBugAnt } from 'react-icons/hi2'
 import RunButton from './RunButton'
+import { toast } from 'react-hot-toast'
 
 export default function WorkspaceToolbar() {
   const {
     activeProjectName,
-    activeFile,
     sidebarOpen,
     copilotOpen,
     toggleSidebar,
     toggleCopilot,
     toggleTerminal,
     toggleGlobalSearch,
-    saveFile,
-    unsavedFiles,
   } = useWorkspaceStore()
 
   const navigate = useNavigate()
 
-  const breadcrumb = activeFile?.path?.split('/') || []
-
   return (
     <div className="workspace-toolbar">
-      {/* Left section */}
+      {/* Left section: Project Name */}
       <div className="workspace-toolbar-section">
+        <div className="workspace-toolbar-project">
+          {activeProjectName || 'AIRA Workspace'}
+        </div>
+      </div>
+
+      {/* Center section: Primary Actions */}
+      <div className="workspace-toolbar-section flex-1 justify-center gap-1 sm:gap-2">
         <button
           className="workspace-toolbar-btn"
           onClick={toggleSidebar}
           title={sidebarOpen ? 'Hide Explorer' : 'Show Explorer'}
         >
-          <HiOutlineMenu className="w-4 h-4" />
+          <HiOutlineMenu className="w-[18px] h-[18px]" />
+          <span className="hidden md:inline">Explorer</span>
         </button>
 
-        <button
-          className="workspace-toolbar-btn"
-          onClick={() => navigate('/projects')}
-          title="Back to Projects"
+        <button 
+          className="workspace-toolbar-btn" 
+          onClick={toggleGlobalSearch} 
+          title="Search (Ctrl+Shift+F)"
         >
-          <HiOutlineChevronLeft className="w-4 h-4" />
-        </button>
-
-        <div className="workspace-toolbar-project">
-          <span className="workspace-toolbar-project-name">
-            {activeProjectName || 'AIRA Workspace'}
-          </span>
-        </div>
-
-        {/* Breadcrumb */}
-        {breadcrumb.length > 0 && (
-          <div className="workspace-toolbar-breadcrumb">
-            <span className="workspace-toolbar-separator">›</span>
-            {breadcrumb.map((part, i) => (
-              <span key={i}>
-                <span className={i === breadcrumb.length - 1 ? 'text-aira-text' : 'text-aira-text-dim'}>
-                  {part}
-                </span>
-                {i < breadcrumb.length - 1 && (
-                  <span className="workspace-toolbar-separator">›</span>
-                )}
-              </span>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Right section */}
-      <div className="workspace-toolbar-section">
-        <button
-          className={`workspace-toolbar-btn ${useWorkspaceStore.getState().previewOpen ? 'text-aira-primary' : ''}`}
-          onClick={useWorkspaceStore.getState().togglePreview}
-          title="Toggle Preview"
-        >
-          <HiOutlineEye className="w-4 h-4" />
+          <HiOutlineSearch className="w-[18px] h-[18px]" />
+          <span className="hidden md:inline">Search</span>
         </button>
 
         <RunButton />
 
-        {activeFile && unsavedFiles.has(activeFile.path) && (
-          <button
-            className="workspace-toolbar-btn"
-            onClick={() => saveFile(activeFile.path)}
-            title="Save (Ctrl+S)"
-          >
-            <HiOutlineSave className="w-4 h-4" />
-          </button>
-        )}
-
-        <button className="workspace-toolbar-btn" onClick={toggleGlobalSearch} title="Search (Ctrl+Shift+F)">
-          <HiOutlineSearch className="w-4 h-4" />
+        <button 
+          className="workspace-toolbar-btn" 
+          onClick={() => toast('Debugger coming soon!', { icon: '🚧' })} 
+          title="Debug Project"
+        >
+          <HiOutlineBugAnt className="w-[18px] h-[18px]" />
+          <span className="hidden md:inline">Debug</span>
         </button>
 
-        <button className="workspace-toolbar-btn" onClick={toggleTerminal} title="Terminal (Ctrl+`)">
-          <HiOutlineTerminal className="w-4 h-4" />
+        <button 
+          className="workspace-toolbar-btn" 
+          onClick={toggleTerminal} 
+          title="Terminal (Ctrl+`)"
+        >
+          <HiOutlineTerminal className="w-[18px] h-[18px]" />
+          <span className="hidden md:inline">Terminal</span>
         </button>
+      </div>
 
+      {/* Right section: System Actions */}
+      <div className="workspace-toolbar-section">
         <button
           className={`workspace-toolbar-btn ${copilotOpen ? 'workspace-toolbar-btn-active' : ''}`}
           onClick={toggleCopilot}
           title="AIRA Copilot"
         >
-          <HiOutlineChat className="w-4 h-4" />
-          <span className="hidden sm:inline text-xs">Copilot</span>
+          <HiOutlineChat className="w-[18px] h-[18px]" />
+          <span className="hidden sm:inline">
+            {copilotOpen ? 'AIRA Copilot' : 'Open Copilot'}
+          </span>
+        </button>
+
+        <button
+          className="workspace-toolbar-btn workspace-toolbar-btn-bordered text-red-500 hover:text-red-400 hover:bg-red-500/10 hover:border-red-500/30"
+          onClick={() => {
+            useWorkspaceStore.getState().exitWorkspace()
+            navigate('/projects')
+          }}
+          title="Exit Workspace"
+        >
+          <span className="hidden sm:inline text-xs font-medium">Exit Workspace</span>
+          <span className="sm:hidden text-xs font-medium">Exit</span>
         </button>
       </div>
     </div>

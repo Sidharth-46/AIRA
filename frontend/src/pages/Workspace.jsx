@@ -42,6 +42,7 @@ export default function Workspace() {
     bottomPanelHeight,
     setBottomPanelHeight,
     hideContextMenu,
+    isEditorReady,
   } = useWorkspaceStore()
 
   const [loading, setLoading] = useState(true)
@@ -54,7 +55,7 @@ export default function Workspace() {
     return () => console.log('WORKSPACE_UNMOUNT')
   }, [projectId, activeProjectId])
 
-  // Load project on mount
+  // Load project and file tree on mount
   useEffect(() => {
     const loadProject = async () => {
       const effectiveProjectId = projectId || activeProjectId
@@ -78,7 +79,6 @@ export default function Workspace() {
         }
         
         await refreshTree(effectiveProjectId)
-        await rehydrateOpenFiles(effectiveProjectId)
         console.log('WORKSPACE_LOAD_SUCCESS', { effectiveProjectId })
       } catch (err) {
         console.error('WORKSPACE_LOAD_FAILURE', err)
@@ -89,6 +89,16 @@ export default function Workspace() {
     loadProject()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [projectId])
+
+  // Restore active files only when Monaco is fully ready
+  useEffect(() => {
+    const effectiveProjectId = projectId || activeProjectId
+    if (isEditorReady && effectiveProjectId) {
+      rehydrateOpenFiles(effectiveProjectId).catch((err) => {
+        console.error('WORKSPACE_RESTORE_FAILURE_CAUGHT:', err)
+      })
+    }
+  }, [isEditorReady, projectId, activeProjectId, rehydrateOpenFiles])
 
   // Close context menu on any click
   useEffect(() => {

@@ -103,30 +103,39 @@ export default function CopilotPanel() {
       const reader = response.body.getReader()
       const decoder = new TextDecoder()
       let accumulated = ''
+      let currentEventType = 'message'
+      let buffer = ''
 
       while (true) {
         const { done, value } = await reader.read()
         if (done) break
-        const chunk = decoder.decode(value, { stream: true })
-        const lines = chunk.split('\n')
+        buffer += decoder.decode(value, { stream: true })
+        const lines = buffer.split('\n')
+        buffer = lines.pop() || ''
 
         for (const line of lines) {
+          if (line.startsWith('event: ')) {
+            currentEventType = line.slice(7).trim()
+            continue
+          }
           if (line.startsWith('data: ')) {
-            const data = line.slice(6)
+            const dataStr = line.slice(6)
             try {
-              const parsed = JSON.parse(data)
-              if (parsed.event === 'token') {
-                accumulated += parsed.data
+              const parsed = JSON.parse(dataStr)
+              if (currentEventType === 'token') {
+                accumulated += parsed
                 setStreamingContent(accumulated)
-              } else if (parsed.event === 'done') {
-                setMessages((prev) => [...prev, { role: 'assistant', content: accumulated }])
-                setStreamingContent('')
-                accumulated = ''
+              } else if (currentEventType === 'done') {
+                if (accumulated) {
+                  setMessages((prev) => [...prev, { role: 'assistant', content: accumulated }])
+                  setStreamingContent('')
+                  accumulated = ''
+                }
               }
             } catch {
-              // not JSON, try raw token
-              if (data && data !== '[DONE]') {
-                accumulated += data
+              // fallback if not JSON
+              if (dataStr && dataStr !== '[DONE]') {
+                accumulated += dataStr
                 setStreamingContent(accumulated)
               }
             }

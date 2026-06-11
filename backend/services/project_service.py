@@ -116,6 +116,9 @@ class ProjectService:
         if project.get("path") and os.path.exists(project["path"]):
             shutil.rmtree(project["path"], ignore_errors=True)
 
+        from models.workspace_chat import WorkspaceChat
+        WorkspaceChat.delete_by_project(project_id, user_id)
+
         Project.delete(project_id, user_id)
         logger.info(f"Project deleted: {project_id}")
         return True, None

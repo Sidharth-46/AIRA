@@ -8,6 +8,12 @@ export const useChatStore = create((set, get) => ({
   messages: [],
   streams: {}, // { [chatId]: { isStreaming, content, agent, intent, model, abortController } }
   folders: [],
+  isHydrating: true,
+  isCreatingChat: false,
+
+  clearActiveChat: () => {
+    set({ activeChat: null, messages: [] })
+  },
 
   fetchChats: async () => {
     try {
@@ -16,6 +22,32 @@ export const useChatStore = create((set, get) => ({
     } catch (err) {
       console.error('Failed to fetch chats:', err)
     }
+  },
+
+  initHydration: async () => {
+    try {
+      console.log('HYDRATION_START: Loading chats')
+      await get().fetchChats()
+      const activeChatId = localStorage.getItem('aira_active_chat')
+      if (activeChatId) {
+        console.log('HYDRATION_RESTORE_ACTIVE: ', activeChatId)
+        await get().selectChat(activeChatId)
+      }
+      console.log('HYDRATION_COMPLETE: Chats loaded')
+    } catch (err) {
+      console.error('HYDRATION_ERROR: ', err)
+    } finally {
+      set({ isHydrating: false })
+    }
+  },
+
+  cleanupStream: (chatId) => {
+    set((s) => {
+      const newStreams = { ...s.streams }
+      delete newStreams[chatId]
+      return { streams: newStreams }
+    })
+    console.log(`STREAM_CLEANUP: ${chatId}`)
   },
 
   createChat: async () => {
@@ -47,22 +79,37 @@ export const useChatStore = create((set, get) => ({
   },
 
   sendMessage: async (content, navigate) => {
+    if (get().isHydrating) return
+
     let { activeChat } = get()
 
     // Auto-create chat if we are on the root /chat path
-    if (!activeChat) {
+    if (!activeChat || activeChat.id === 'new-chat') {
+      console.log('NEW_CHAT_CREATED')
+      set({ isCreatingChat: true })
       activeChat = await get().createChat()
-      if (!activeChat) return
+      if (!activeChat) {
+        console.error('SEND_MESSAGE_FAILURE: Failed to create active chat')
+        set({ isCreatingChat: false })
+        return
+      }
       
-      // Update the URL to the new chat
+      // Navigate *before* sending so Chat component doesn't remount mid-stream
       if (navigate) {
         navigate(`/chat/${activeChat.id}`, { replace: true })
       }
+      set({ isCreatingChat: false })
     }
 
     const chatId = activeChat.id
 
+    if (!chatId || chatId === 'new-chat') {
+      throw new Error('No active chat ID exists for sending message')
+    }
+
     if (get().streams[chatId]?.isStreaming) return
+
+    console.log(`SEND_MESSAGE_START: chatId=${chatId}, length=${content.length}`)
 
     // Add user message immediately if this is the active chat
     const userMsg = {
@@ -93,8 +140,10 @@ export const useChatStore = create((set, get) => ({
       }
     }))
 
+    let fallbackTimeout = null
+    const controller = new AbortController()
+
     try {
-      const controller = new AbortController()
       set((s) => ({
         streams: {
           ...s.streams,
@@ -102,15 +151,39 @@ export const useChatStore = create((set, get) => ({
         }
       }))
 
-      const workspaceState = useWorkspaceStore.getState()
-      const workspaceContext = workspaceState.activeProjectId ? {
-        projectId: workspaceState.activeProjectId,
-        currentFile: workspaceState.activeFile?.path || null
-      } : null;
+      console.log(`STREAM_STARTED: ${chatId}`)
 
+      // Emergency Fallback: If no token in 5s, abort and show error
+      fallbackTimeout = setTimeout(() => {
+        console.warn(`STREAM_TIMEOUT: No stream data received for ${chatId} within 5000ms. Aborting.`)
+        controller.abort()
+        
+        const errorMsg = {
+          id: 'error-' + Date.now(),
+          role: 'assistant',
+          content: '**[Error: Response failed to start. Please retry.]**',
+          timestamp: new Date().toISOString(),
+        }
+        
+        if (get().activeChat?.id === chatId) {
+          set((s) => ({ messages: [...s.messages, errorMsg] }))
+        }
+        
+        get().cleanupStream(chatId)
+      }, 5000)
+
+      // const workspaceState = useWorkspaceStore.getState()
+      // const workspaceContext = workspaceState.activeProjectId ? {
+      //   projectId: workspaceState.activeProjectId,
+      //   currentFile: workspaceState.activeFile?.path || null
+      // } : null;
+      
+      const workspaceContext = null;
+
+      console.log('CHAT_REQUEST_VALIDATED')
       const response = await chatService.sendMessage(chatId, content, workspaceContext)
       
-      // Clear draft for this chat
+      // Clear draft for this chat securely
       try {
         const drafts = JSON.parse(localStorage.getItem('aira_chat_drafts') || '{}')
         if (drafts[chatId]) {
@@ -120,6 +193,7 @@ export const useChatStore = create((set, get) => ({
       } catch (e) {
         console.error('Failed to clear draft:', e)
       }
+      
       const reader = response.body.getReader()
       const decoder = new TextDecoder()
       let buffer = ''
@@ -128,6 +202,14 @@ export const useChatStore = create((set, get) => ({
 
       while (true) {
         const { done, value } = await reader.read()
+        
+        // Clear emergency timeout as soon as we get the first chunk
+        if (fallbackTimeout) {
+          clearTimeout(fallbackTimeout)
+          fallbackTimeout = null
+          console.log('CHAT_RESPONSE_STARTED')
+        }
+
         if (done) break
 
         buffer += decoder.decode(value, { stream: true })
@@ -191,25 +273,23 @@ export const useChatStore = create((set, get) => ({
                         timestamp: new Date().toISOString(),
                       }
                       
-                      // Append to UI messages only if this is the currently active chat
                       if (get().activeChat?.id === chatId) {
                         set((s) => ({
                           messages: [...s.messages, assistantMsg],
                         }))
                       }
-                      
-                      // Clear stream state
-                      set((s) => {
-                        const newStreams = { ...s.streams }
-                        delete newStreams[chatId]
-                        return { streams: newStreams }
-                      })
+                      set((s) => ({
+                        streams: { ...s.streams, [chatId]: { ...s.streams[chatId], isStreaming: false } }
+                      }))
+                      console.log(`STREAM_COMPLETED: ${chatId}`)
+                      console.log(`CHAT_RESPONSE_COMPLETED: length=${finalStream.content.length}`)
                     }
                   } else {
                     const newContent = (currentStream.content || '') + data
                     set((s) => ({
                       streams: { ...s.streams, [chatId]: { ...s.streams[chatId], content: newContent } }
                     }))
+                    console.log('STREAM_TOKEN_RECEIVED')
                   }
                 }
             } catch {
@@ -227,41 +307,39 @@ export const useChatStore = create((set, get) => ({
         }
       }
 
-      // Add assistant message if the stream was aborted or broken abruptly
-      const finalStream = get().streams[chatId]
-      if (finalStream?.isStreaming) {
-        if (finalStream.content) {
-          const assistantMsg = {
-            id: 'msg-' + Date.now(),
-            role: 'assistant',
-            content: finalStream.content,
-            agent: finalStream.agent,
-            model: finalStream.model,
-            timestamp: new Date().toISOString(),
-          }
-          if (get().activeChat?.id === chatId) {
-            set((s) => ({ messages: [...s.messages, assistantMsg] }))
-          }
-        }
-        
-        set((s) => {
-          const newStreams = { ...s.streams }
-          delete newStreams[chatId]
-          return { streams: newStreams }
-        })
-      }
-
       // Refresh chat list
       get().fetchChats()
+      console.log('SEND_MESSAGE_SUCCESS')
     } catch (err) {
-      if (err.name !== 'AbortError') {
-        console.error('Send message error:', err)
+      if (fallbackTimeout) clearTimeout(fallbackTimeout)
+      if (err.name === 'AbortError') {
+        console.log(`STREAM_ABORTED: ${chatId}`)
+      } else {
+        console.error(`STREAM_ERROR: ${chatId}`, err)
+        console.error('SEND_MESSAGE_FAILURE')
       }
-      set((s) => {
-        const newStreams = { ...s.streams }
-        delete newStreams[chatId]
-        return { streams: newStreams }
-      })
+    } finally {
+      if (fallbackTimeout) clearTimeout(fallbackTimeout)
+      
+      // Fallback commit: If stream ended abruptly without 'done' event but has content
+      const finalStream = get().streams[chatId]
+      if (finalStream && finalStream.content && finalStream.isStreaming) {
+        const assistantMsg = {
+          id: 'msg-' + Date.now(),
+          role: 'assistant',
+          content: finalStream.content,
+          agent: finalStream.agent,
+          model: finalStream.model,
+          timestamp: new Date().toISOString(),
+        }
+        if (get().activeChat?.id === chatId) {
+          set((s) => ({
+            messages: [...s.messages, assistantMsg],
+          }))
+        }
+      }
+      
+      get().cleanupStream(chatId)
     }
   },
 
@@ -286,11 +364,8 @@ export const useChatStore = create((set, get) => ({
       }
     }
     
-    set((s) => {
-      const newStreams = { ...s.streams }
-      delete newStreams[chatId]
-      return { streams: newStreams }
-    })
+    get().cleanupStream(chatId)
+    console.log(`STREAM_ABORTED: ${chatId}`)
   },
 
   deleteChat: async (chatId) => {

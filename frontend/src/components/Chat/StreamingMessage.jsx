@@ -8,9 +8,8 @@ export default function StreamingMessage({ content, agent, intent }) {
   const { theme } = useThemeStore()
   const endRef = useRef(null)
 
-  useEffect(() => {
-    endRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [content])
+  // Let parent components handle scrolling when a message is added.
+  // We remove the content-based scroll to allow the user to scroll freely during generation.
 
   const getStatusText = () => {
     if (intent === 'analyze_repo') return 'Analyzing repository...'

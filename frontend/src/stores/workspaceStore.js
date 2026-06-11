@@ -13,6 +13,7 @@ export const useWorkspaceStore = create(
       fileTree: [],
 
       // ── Editor State ──
+      isEditorReady: false,
       openFiles: [],        // Array of { path, name, type, content, originalContent }
       activeFile: null,      // Same shape as openFiles entry
       unsavedFiles: new Set(),
@@ -61,6 +62,22 @@ export const useWorkspaceStore = create(
         } catch (err) {
           console.error('Failed to fetch tree', err)
         }
+      },
+
+      exitWorkspace: () => {
+        set({
+          activeProjectId: null,
+          activeProjectName: null,
+          activeFile: null,
+          openFiles: [],
+          fileTree: [],
+          expandedFolders: [],
+          unsavedFiles: new Set(),
+          logs: [],
+          problems: [],
+        })
+        localStorage.removeItem('aira_workspace_state')
+        localStorage.removeItem('aira_active_chat')
       },
 
       // ════════════════════════════════════════════
@@ -240,6 +257,8 @@ export const useWorkspaceStore = create(
       setBottomPanelHeight: (h) => set({ bottomPanelHeight: Math.max(100, Math.min(h, 500)) }),
       setBottomPanelTab: (tab) => set({ bottomPanelTab: tab }),
 
+      setEditorReady: (val) => set({ isEditorReady: val }),
+
       setCursorPosition: (line, column) => set({ cursorPosition: { line, column } }),
 
       // ── Overlay toggles ──
@@ -337,18 +356,31 @@ export const useWorkspaceStore = create(
         bottomPanelTab: state.bottomPanelTab,
       }),
       // Merge persisted state with defaults, converting Sets properly
-      merge: (persisted, current) => ({
-        ...current,
-        ...persisted,
-        unsavedFiles: new Set(),
-        fileTree: [],
-        logs: [],
-        problems: [],
-        contextMenu: null,
-        commandPaletteOpen: false,
-        fileSearchOpen: false,
-        globalSearchOpen: false,
-      }),
+      merge: (persisted, current) => {
+        let safePersisted = {}
+        try {
+          if (persisted && typeof persisted === 'object') {
+            safePersisted = { ...persisted }
+            if (!Array.isArray(safePersisted.openFiles)) safePersisted.openFiles = []
+            if (!Array.isArray(safePersisted.expandedFolders)) safePersisted.expandedFolders = []
+          }
+        } catch (e) {
+          console.error('WORKSPACE_INVALID_STATE', e)
+        }
+        return {
+          ...current,
+          ...safePersisted,
+          isEditorReady: false, // Always start unready
+          unsavedFiles: new Set(),
+          fileTree: [],
+          logs: [],
+          problems: [],
+          contextMenu: null,
+          commandPaletteOpen: false,
+          fileSearchOpen: false,
+          globalSearchOpen: false,
+        }
+      },
     }
   )
 )

@@ -1,14 +1,16 @@
 import { useState, useEffect } from 'react'
-import { Link, useLocation } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../../stores/authStore'
 import { HiOutlineCode, HiOutlineFolderOpen, HiOutlineHome, HiOutlineLogout, HiOutlineMoon, HiOutlinePlus, HiOutlineSun, HiOutlineViewGrid, HiChevronDoubleLeft, HiChevronDoubleRight } from 'react-icons/hi'
 import { useThemeStore } from '../../stores/themeStore'
+import { useChatStore } from '../../stores/chatStore'
 import ChatList from '../Chat/ChatList'
 
 export default function Sidebar({ isOpen, toggleSidebar }) {
   const { user, logout } = useAuthStore()
   const { theme, toggleTheme } = useThemeStore()
   const location = useLocation()
+  const navigate = useNavigate()
 
   const navItems = [
     { name: 'Dashboard', path: '/dashboard', icon: HiOutlineViewGrid },
@@ -77,8 +79,10 @@ export default function Sidebar({ isOpen, toggleSidebar }) {
             to="/chat"
             className="flex items-center justify-center gap-2 btn-primary text-sm transition-all"
             style={{ height: '40px', width: isCollapsed ? '40px' : '100%', borderRadius: '10px', padding: isCollapsed ? '0' : '0 16px' }}
-            onClick={() => {
+            onClick={(e) => {
+              e.preventDefault()
               localStorage.removeItem('aira_active_chat')
+              navigate('/chat')
               if (window.innerWidth < 1024) toggleSidebar()
             }}
             title="New Chat"

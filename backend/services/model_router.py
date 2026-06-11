@@ -186,19 +186,19 @@ class ModelRouter:
         # 3. Tier Selection
         if intent == "GENERAL_CHAT":
             tier = GENERAL_MODELS
-            timeout = 60
+            timeout = 120
         elif intent == "CODING":
             tier = CODING_MODELS
-            timeout = 120
+            timeout = 180
         elif intent == "REPOSITORY_ANALYSIS":
             tier = CODING_MODELS
-            timeout = 180
+            timeout = 240
         elif intent == "DOCUMENTATION":
             tier = CODING_MODELS
-            timeout = 120
+            timeout = 180
         else:
             tier = GENERAL_MODELS
-            timeout = 60
+            timeout = 120
 
         model = self._get_best_model_for_tier(tier)
 

@@ -15,18 +15,40 @@ function ProtectedRoute({ children }) {
   return children
 }
 
+import { useChatStore } from './stores/chatStore'
+import { useWorkspaceStore } from './stores/workspaceStore'
+
 export default function App() {
   const { checkAuth } = useAuthStore()
+  const { initHydration } = useChatStore()
+  const { rehydrateOpenFiles } = useWorkspaceStore()
+  
   const [isInitializing, setIsInitializing] = useState(true)
 
   useEffect(() => {
-    checkAuth().finally(() => setIsInitializing(false))
-  }, [checkAuth])
+    const initializeApp = async () => {
+      try {
+        const auth = await checkAuth()
+        if (auth) {
+          // Sequential hydration
+          await initHydration()
+          await rehydrateOpenFiles()
+        }
+      } catch (err) {
+        console.error('App initialization failed:', err)
+      } finally {
+        setIsInitializing(false)
+      }
+    }
+    
+    initializeApp()
+  }, [checkAuth, initHydration, rehydrateOpenFiles])
 
   if (isInitializing) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-aira-bg">
+      <div className="min-h-screen flex flex-col items-center justify-center bg-aira-bg gap-4">
         <div className="w-8 h-8 border-2 border-aira-border border-t-aira-primary rounded-full animate-spin" />
+        <div className="text-aira-text-dim text-sm animate-pulse">Initializing AIRA...</div>
       </div>
     )
   }

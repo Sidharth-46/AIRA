@@ -1,15 +1,56 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, Component } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useChatStore } from '../stores/chatStore'
 import MessageBubble from '../components/Chat/MessageBubble'
 import StreamingMessage from '../components/Chat/StreamingMessage'
 import ChatInput from '../components/Chat/ChatInput'
 
-export default function Chat() {
+class ChatErrorBoundary extends Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error, errorInfo) {
+    console.error("CHAT_RENDER_ERROR", error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div style={{ padding: '32px', color: 'red', background: '#222', minHeight: '100vh' }}>
+          <h2>Something went wrong in Chat.</h2>
+          <pre style={{ fontSize: '12px', marginTop: '16px' }}>{this.state.error?.toString()}</pre>
+          <button 
+            onClick={() => {
+              localStorage.removeItem('aira_active_chat');
+              localStorage.removeItem('aira_chat_drafts');
+              localStorage.removeItem('aira_workspace_state');
+              localStorage.removeItem('aira_sidebar_collapsed');
+              window.location.reload();
+            }}
+            style={{ marginTop: '16px', padding: '8px 16px', background: 'red', color: 'white', borderRadius: '4px' }}
+          >
+            Clear LocalStorage & Reload
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
+console.log("CHAT_PAGE_MOUNT")
+
+function ChatContent() {
   const { chatId } = useParams()
   const navigate = useNavigate()
   
-  const { messages, streams, sendMessage, stopGeneration, selectChat } = useChatStore()
+  const { messages, streams, sendMessage, stopGeneration, selectChat, activeChat, clearActiveChat } = useChatStore()
   
   const streamState = chatId ? streams[chatId] : null
   const isStreaming = !!streamState?.isStreaming
@@ -20,19 +61,26 @@ export default function Chat() {
   
   const messagesEndRef = useRef(null)
 
+  console.log("CHAT_PAGE_RENDER", { chatId, messagesCount: messages?.length || 0 })
+
   useEffect(() => {
     if (chatId) {
-      selectChat(chatId)
+      if (activeChat?.id !== chatId) {
+        selectChat(chatId)
+      }
     } else {
       const active = localStorage.getItem('aira_active_chat')
       if (active) {
         console.log('CHAT_LOAD (from refresh recovery)')
         navigate(`/chat/${active}`, { replace: true })
       } else {
-        useChatStore.setState({ activeChat: null, messages: [] })
+        const { isCreatingChat } = useChatStore.getState()
+        if (clearActiveChat && !isCreatingChat) {
+          clearActiveChat()
+        }
       }
     }
-  }, [chatId, selectChat, navigate])
+  }, [chatId, selectChat, navigate, activeChat?.id, clearActiveChat])
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -40,7 +88,7 @@ export default function Chat() {
 
   useEffect(() => {
     scrollToBottom()
-  }, [messages, streamingContent])
+  }, [messages])
 
   return (
     <div className="flex flex-col h-full relative" style={{ background: 'var(--color-aira-bg)' }}>
@@ -114,5 +162,13 @@ export default function Chat() {
         />
       </div>
     </div>
+  )
+}
+
+export default function Chat() {
+  return (
+    <ChatErrorBoundary>
+      <ChatContent />
+    </ChatErrorBoundary>
   )
 }

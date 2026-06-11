@@ -34,7 +34,8 @@ export default function RunButton() {
 
   return (
     <button className="workspace-toolbar-btn text-aira-success" onClick={handleRun} title="Run Project">
-      <HiOutlinePlay className="w-4 h-4" />
+      <HiOutlinePlay className="w-[18px] h-[18px]" />
+      <span className="hidden md:inline">Run</span>
     </button>
   )
 }

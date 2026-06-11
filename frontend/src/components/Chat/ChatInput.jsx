@@ -1,25 +1,46 @@
 import { useState, useRef, useEffect } from 'react'
 import { HiOutlineArrowUp, HiStop } from 'react-icons/hi'
+import { useChatStore } from '../../stores/chatStore'
 
 export default function ChatInput({ chatId, onSend, isStreaming, onStop }) {
   const [input, setInput] = useState('')
   const textareaRef = useRef(null)
   const debounceRef = useRef(null)
 
-  // Load draft on mount
+  const { isHydrating } = useChatStore()
+
+  // Load draft on mount or chat change
   useEffect(() => {
     try {
+      if (!chatId || chatId === 'new-chat') {
+        // Explicit zero-state for new chats
+        setInput('')
+        
+        // Also cleanup any ghost drafts that somehow made it to localStorage
+        const drafts = JSON.parse(localStorage.getItem('aira_chat_drafts') || '{}')
+        if (drafts['new-chat']) {
+          delete drafts['new-chat']
+          localStorage.setItem('aira_chat_drafts', JSON.stringify(drafts))
+        }
+        return
+      }
+
       const drafts = JSON.parse(localStorage.getItem('aira_chat_drafts') || '{}')
       if (drafts[chatId]) {
         setInput(drafts[chatId])
+      } else {
+        setInput('')
       }
     } catch (e) {
       console.error('Failed to load draft:', e)
+      setInput('')
     }
   }, [chatId])
 
   // Save draft with debounce
   useEffect(() => {
+    if (!chatId || chatId === 'new-chat') return
+
     if (debounceRef.current) clearTimeout(debounceRef.current)
     
     debounceRef.current = setTimeout(() => {
@@ -114,7 +135,8 @@ export default function ChatInput({ chatId, onSend, isStreaming, onStop }) {
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="Message AIRA..."
+          placeholder={isHydrating ? "Initializing AIRA..." : "Message AIRA..."}
+          disabled={isHydrating}
           rows={1}
           style={{
             flex: 1,
@@ -156,7 +178,7 @@ export default function ChatInput({ chatId, onSend, isStreaming, onStop }) {
         ) : (
           <button 
             onClick={handleSend}
-            disabled={!input.trim()}
+            disabled={!input.trim() || isHydrating}
             style={{
               width: '36px',
               height: '36px',

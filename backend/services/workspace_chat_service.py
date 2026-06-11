@@ -85,7 +85,13 @@ class WorkspaceChatService:
             # Wait, history already includes the user message since we just saved it.
             
             def stream_generator():
-                router = ModelRouter()
+                from services.model_router import get_model_router
+                from services.model_providers.model_registry import get_provider
+                
+                router = get_model_router()
+                route = router.route_request(content, workspace_context=True, context_size=len(workspace_context) if workspace_context else 0)
+                model = route.get("model", "qwen2.5-coder:7b")
+                
                 accumulated = ""
                 agent_name = "coder" # Default copilot agent
                 
@@ -95,7 +101,8 @@ class WorkspaceChatService:
                 }
                 
                 try:
-                    for chunk in router.stream_chat(system_prompt, history):
+                    provider = get_provider(model)
+                    for chunk in provider.stream_chat(messages):
                         accumulated += chunk
                         yield {
                             "event": "token",

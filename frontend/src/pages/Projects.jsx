@@ -2,15 +2,26 @@ import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { projectService } from '../services'
 import LoadingSpinner from '../components/Common/LoadingSpinner'
-import { HiOutlineFolder, HiOutlineUpload, HiOutlineTrash, HiOutlineCode, HiOutlineExternalLink } from 'react-icons/hi'
+import { HiOutlineFolder, HiOutlineUpload, HiOutlineTrash, HiOutlineCode, HiOutlineExternalLink, HiDotsVertical, HiOutlinePencil } from 'react-icons/hi'
 import toast from 'react-hot-toast'
+import { useWorkspaceStore } from '../stores/workspaceStore'
 
 export default function Projects() {
   const [projects, setProjects] = useState([])
   const [loading, setLoading] = useState(true)
   const [uploading, setUploading] = useState(false)
+  const [menuOpenId, setMenuOpenId] = useState(null)
+  const [projectToDelete, setProjectToDelete] = useState(null)
+  
   const fileInputRef = useRef(null)
   const navigate = useNavigate()
+  
+  // Close menu when clicking outside
+  useEffect(() => {
+    const handleClick = () => setMenuOpenId(null)
+    window.addEventListener('click', handleClick)
+    return () => window.removeEventListener('click', handleClick)
+  }, [])
 
   useEffect(() => {
     fetchProjects()
@@ -49,17 +60,23 @@ export default function Projects() {
     }
   }
 
-  const handleDelete = async (e, id) => {
-    e.preventDefault()
-    e.stopPropagation()
-    if (!window.confirm('Are you sure you want to delete this project?')) return
+  const handleDelete = async (id) => {
     try {
       await projectService.deleteProject(id)
       setProjects(prev => prev.filter(p => p._id !== id && p.id !== id))
+      
+      // If the deleted project is currently active, clear the workspace
+      const { activeProjectId, exitWorkspace } = useWorkspaceStore.getState()
+      if (activeProjectId === id) {
+        exitWorkspace()
+      }
+      
       toast.success('Project deleted')
     } catch (err) {
       console.error('Delete failed', err)
       toast.error('Failed to delete project')
+    } finally {
+      setProjectToDelete(null)
     }
   }
 
@@ -140,7 +157,7 @@ export default function Projects() {
                     <HiOutlineCode style={{ fontSize: '18px', color: 'var(--color-aira-text-muted)' }} />
                   </div>
                   
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', position: 'relative' }}>
                     <span style={{ 
                       fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600,
                       padding: '4px 8px', borderRadius: '6px', 
@@ -149,17 +166,51 @@ export default function Projects() {
                       {project.type || 'uploaded'}
                     </span>
                     <button 
-                      onClick={(e) => handleDelete(e, project._id || project.id)}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setMenuOpenId(menuOpenId === (project._id || project.id) ? null : (project._id || project.id))
+                      }}
                       style={{ 
                         padding: '4px', borderRadius: '6px', background: 'transparent', border: 'none', 
-                        color: 'var(--color-aira-text-dim)', cursor: 'pointer', opacity: 0, transition: 'opacity 0.1s ease',
+                        color: 'var(--color-aira-text-dim)', cursor: 'pointer', transition: 'all 0.15s ease',
                       }}
-                      className="group-hover:opacity-100"
-                      onMouseEnter={(e) => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.color = '#EF4444' }}
-                      onMouseLeave={(e) => { e.currentTarget.style.opacity = '0'; e.currentTarget.style.color = 'var(--color-aira-text-dim)' }}
+                      onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--color-aira-text)' }}
+                      onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--color-aira-text-dim)' }}
                     >
-                      <HiOutlineTrash style={{ fontSize: '14px' }} />
+                      <HiDotsVertical style={{ fontSize: '16px' }} />
                     </button>
+
+                    {menuOpenId === (project._id || project.id) && (
+                      <div 
+                        style={{
+                          position: 'absolute', top: '100%', right: 0, marginTop: '8px',
+                          background: 'var(--color-aira-surface-2)', border: '1px solid var(--color-aira-border)',
+                          borderRadius: '12px', padding: '6px', minWidth: '160px', zIndex: 10,
+                          boxShadow: '0 4px 20px rgba(0,0,0,0.3)'
+                        }}
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <button 
+                          className="w-full text-left px-3 py-2 text-sm text-aira-text hover:bg-aira-surface rounded-md flex items-center gap-2"
+                          onClick={() => { setMenuOpenId(null); openWorkspace(project._id || project.id); }}
+                        >
+                          <HiOutlineExternalLink /> Open Project
+                        </button>
+                        <button 
+                          className="w-full text-left px-3 py-2 text-sm text-aira-text hover:bg-aira-surface rounded-md flex items-center gap-2"
+                          onClick={() => { setMenuOpenId(null); toast('Rename coming soon!', { icon: '🚧' }) }}
+                        >
+                          <HiOutlinePencil /> Rename Project
+                        </button>
+                        <div style={{ height: '1px', background: 'var(--color-aira-border)', margin: '4px 0' }} />
+                        <button 
+                          className="w-full text-left px-3 py-2 text-sm text-red-500 hover:bg-red-500/10 rounded-md flex items-center gap-2"
+                          onClick={() => { setMenuOpenId(null); setProjectToDelete(project) }}
+                        >
+                          <HiOutlineTrash /> Delete Project
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -198,6 +249,59 @@ export default function Projects() {
           </div>
         )}
       </div>
+
+      {/* Delete Confirmation Modal */}
+      {projectToDelete && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50,
+          padding: '24px'
+        }}>
+          <div style={{
+            background: 'var(--color-aira-surface)', border: '1px solid var(--color-aira-border)',
+            borderRadius: '16px', padding: '32px', width: '100%', maxWidth: '420px',
+            boxShadow: '0 10px 40px rgba(0,0,0,0.4)',
+          }}>
+            <h2 style={{ fontSize: '20px', fontWeight: 600, color: 'var(--color-aira-text)', marginBottom: '16px' }}>
+              Delete Project?
+            </h2>
+            <p style={{ fontSize: '15px', color: 'var(--color-aira-text-dim)', marginBottom: '16px', lineHeight: '1.5' }}>
+              This will permanently delete <strong>{projectToDelete.name}</strong> and:
+            </p>
+            <ul style={{ 
+              listStyleType: 'disc', paddingLeft: '24px', 
+              color: 'var(--color-aira-text-dim)', fontSize: '14px', marginBottom: '24px',
+              display: 'flex', flexDirection: 'column', gap: '8px'
+            }}>
+              <li>Project record</li>
+              <li>Uploaded files</li>
+              <li>Workspace cache</li>
+              <li>Workspace chat history</li>
+            </ul>
+            <div style={{ padding: '12px', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.2)', borderRadius: '8px', marginBottom: '24px' }}>
+              <p style={{ color: '#EF4444', fontSize: '13px', fontWeight: 500 }}>
+                This action cannot be undone.
+              </p>
+            </div>
+            <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+              <button 
+                onClick={() => setProjectToDelete(null)}
+                className="btn-secondary"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={() => handleDelete(projectToDelete._id || projectToDelete.id)}
+                className="btn-primary"
+                style={{ background: '#EF4444', color: '#fff' }}
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
