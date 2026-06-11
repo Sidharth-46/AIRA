@@ -11,10 +11,18 @@ from flask_cors import CORS
 from flask_jwt_extended import JWTManager
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
+from flask_socketio import SocketIO
 
 from config import get_config
 from utils.logger import setup_logger, get_logger
 
+# Initialize SocketIO globally
+socketio = SocketIO(
+    cors_allowed_origins="*", 
+    async_mode="gevent",
+    logger=True,
+    engineio_logger=True
+)
 
 def create_app():
     """Create and configure the Flask application."""
@@ -43,6 +51,9 @@ def create_app():
         resources={r"/api/*": {"origins": app.config.get("CORS_ORIGINS", ["*"])}},
         supports_credentials=True,
     )
+
+    # Initialize SocketIO
+    socketio.init_app(app)
 
     # Initialize JWT
     jwt = JWTManager(app)
@@ -98,6 +109,8 @@ def create_app():
     from routes.dashboard import dashboard_bp
     from routes.models import models_bp
     from routes.documents import documents_bp
+    from routes.terminal import TerminalNamespace
+    from routes.git import git_bp
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(chat_bp)
@@ -106,6 +119,9 @@ def create_app():
     app.register_blueprint(dashboard_bp)
     app.register_blueprint(models_bp)
     app.register_blueprint(documents_bp)
+    app.register_blueprint(git_bp)
+
+    socketio.on_namespace(TerminalNamespace('/ws/terminal'))
 
     # Health check endpoint
     @app.route("/api/health", methods=["GET"])
@@ -172,7 +188,8 @@ def create_app():
 
 if __name__ == "__main__":
     app = create_app()
-    app.run(
+    socketio.run(
+        app,
         host="0.0.0.0",
         port=5000,
         debug=app.config.get("DEBUG", True),

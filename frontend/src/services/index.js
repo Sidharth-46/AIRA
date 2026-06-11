@@ -54,9 +54,19 @@ export const workspaceService = {
   getTree: (project) => api.get('/api/workspace/tree', { params: { project } }),
   readFile: (path, project) => api.get('/api/workspace/file', { params: { path, project } }),
   saveFile: (path, content, project) => api.put('/api/workspace/file', { path, content, project }),
-  createFile: (data) => api.post('/api/workspace/file', data), // Assuming data already includes project if needed
+  createFile: (data) => api.post('/api/workspace/file', data),
   deleteFile: (path, project) => api.delete('/api/workspace/file', { params: { path, project } }),
+  renameFile: (oldPath, newPath, project) => api.patch('/api/workspace/file', { old_path: oldPath, new_path: newPath, project }),
   search: (q, project) => api.get('/api/workspace/search', { params: { q, project } }),
+}
+
+export const gitService = {
+  getStatus: (project) => api.get('/api/git/status', { params: { project } }),
+  stage: (paths, project) => api.post('/api/git/stage', { paths, project }),
+  unstage: (paths, project) => api.post('/api/git/unstage', { paths, project }),
+  commit: (message, project) => api.post('/api/git/commit', { message, project }),
+  push: (project) => api.post('/api/git/push', { project }),
+  pull: (project) => api.post('/api/git/pull', { project }),
 }
 
 export const dashboardService = {

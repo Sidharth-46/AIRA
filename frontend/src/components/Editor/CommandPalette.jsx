@@ -6,7 +6,7 @@ import { HiOutlineTerminal, HiOutlineMoon, HiOutlineSun, HiOutlineChatAlt2 } fro
 import { useNavigate } from 'react-router-dom'
 
 export default function CommandPalette() {
-  const { commandPaletteOpen, setCommandPaletteOpen, toggleTerminal, toggleSidebar } = useWorkspaceStore()
+  const { commandPaletteOpen, setCommandPaletteOpen, toggleTerminal, toggleSidebar, toggleCopilot } = useWorkspaceStore()
   const { theme, toggleTheme } = useThemeStore()
   const navigate = useNavigate()
   
@@ -17,6 +17,7 @@ export default function CommandPalette() {
   const allCommands = [
     { id: 'terminal', title: 'Toggle Terminal', icon: HiOutlineTerminal, action: toggleTerminal },
     { id: 'sidebar', title: 'Toggle Sidebar', icon: HiOutlineTerminal, action: toggleSidebar },
+    { id: 'copilot', title: 'Toggle Copilot', icon: HiOutlineChatAlt2, action: toggleCopilot },
     { id: 'theme', title: `Switch to ${theme === 'dark' ? 'Light' : 'Dark'} Mode`, icon: theme === 'dark' ? HiOutlineSun : HiOutlineMoon, action: toggleTheme },
     { id: 'new_chat', title: 'New Chat', icon: HiOutlineChatAlt2, action: () => navigate('/chat') },
     { id: 'dashboard', title: 'Go to Dashboard', icon: HiOutlineTerminal, action: () => navigate('/dashboard') },

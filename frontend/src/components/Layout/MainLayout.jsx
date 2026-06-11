@@ -7,15 +7,16 @@ export default function MainLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const location = useLocation()
   const isChatPage = location.pathname.startsWith('/chat')
+  const isWorkspacePage = location.pathname.startsWith('/workspace')
 
   const toggleSidebar = () => setSidebarOpen(!sidebarOpen)
 
   return (
     <div className="flex h-screen overflow-hidden" style={{ background: 'var(--color-aira-bg)' }}>
-      <Sidebar isOpen={sidebarOpen} toggleSidebar={toggleSidebar} />
+      {!isWorkspacePage && <Sidebar isOpen={sidebarOpen} toggleSidebar={toggleSidebar} />}
 
       <div className="flex-1 flex flex-col w-full min-w-0">
-        {!isChatPage && <Header toggleSidebar={toggleSidebar} />}
+        {!isChatPage && !isWorkspacePage && <Header toggleSidebar={toggleSidebar} />}
         
         <main className="flex-1 overflow-auto relative">
           <Outlet />

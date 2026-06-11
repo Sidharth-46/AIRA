@@ -1,99 +1,194 @@
-import { useState } from 'react'
-import { 
-  HiOutlineChevronRight, HiOutlineChevronDown, HiOutlineDocument, HiOutlineFolder, 
-  HiOutlineFolderOpen 
+import {
+  HiOutlineChevronRight,
+  HiOutlineChevronDown,
+  HiOutlineDocument,
+  HiOutlineFolder,
+  HiOutlineFolderOpen,
+  HiOutlineDocumentAdd,
+  HiOutlineFolderAdd,
+  HiOutlineRefresh,
 } from 'react-icons/hi'
 import { useWorkspaceStore } from '../../stores/workspaceStore'
 
-// Helper recursive component for tree nodes
+/* ── File Icon by Extension ── */
+const FILE_ICONS = {
+  js: '🟨', jsx: '⚛️', ts: '🔷', tsx: '⚛️',
+  py: '🐍', json: '📋', md: '📝', css: '🎨', scss: '🎨',
+  html: '🌐', yaml: '⚙️', yml: '⚙️', sh: '🖥️',
+  java: '☕', go: '🐹', rs: '🦀', rb: '💎', php: '🐘',
+  sql: '🗄️', dockerfile: '🐳', toml: '⚙️', xml: '📄',
+  svg: '🖼️', png: '🖼️', jpg: '🖼️', gif: '🖼️',
+  txt: '📄', env: '🔐', gitignore: '🚫', lock: '🔒',
+}
+
+const getFileIcon = (name) => {
+  const ext = name.split('.').pop()?.toLowerCase()
+  return FILE_ICONS[ext] || null
+}
+
+/* ── Tree Node ── */
 const FileTreeNode = ({ node, level = 0 }) => {
-  const [isOpen, setIsOpen] = useState(false)
-  const { openFile, activeFile } = useWorkspaceStore()
-  
+  const {
+    openFile,
+    activeFile,
+    openFiles,
+    expandedFolders,
+    toggleFolder,
+    showContextMenu,
+  } = useWorkspaceStore()
+
   const isDir = node.type === 'directory'
   const isActive = activeFile?.path === node.path
+  const isOpen = expandedFolders.includes(node.path)
 
-  const toggleOpen = (e) => {
-    e.stopPropagation()
-    setIsOpen(!isOpen)
-  }
-
-  const handleSelect = (e) => {
+  const handleClick = (e) => {
     e.stopPropagation()
     if (isDir) {
-      setIsOpen(!isOpen)
+      toggleFolder(node.path)
     } else {
       openFile(node)
     }
   }
 
+  const handleContextMenu = (e) => {
+    e.preventDefault()
+    e.stopPropagation()
+    showContextMenu(e.clientX, e.clientY, node)
+  }
+
+  const fileIcon = !isDir ? getFileIcon(node.name) : null
+
   return (
     <div>
-      <div 
-        className={`flex items-center py-1 px-2 hover:bg-aira-surface-3 cursor-pointer select-none text-sm transition-colors ${
-          isActive ? 'bg-aira-surface-3 text-aira-text' : 'text-aira-text-muted'
-        }`}
+      <div
+        className={`explorer-node ${isActive ? 'explorer-node-active' : ''}`}
         style={{ paddingLeft: `${level * 12 + 8}px` }}
-        onClick={handleSelect}
+        onClick={handleClick}
+        onContextMenu={handleContextMenu}
       >
-        <span className="w-4 h-4 mr-1 flex items-center justify-center" onClick={isDir ? toggleOpen : undefined}>
+        {/* Chevron */}
+        <span className="explorer-node-chevron">
           {isDir ? (
-            isOpen ? <HiOutlineChevronDown className="w-3 h-3" /> : <HiOutlineChevronRight className="w-3 h-3" />
+            isOpen ? (
+              <HiOutlineChevronDown className="w-3 h-3" />
+            ) : (
+              <HiOutlineChevronRight className="w-3 h-3" />
+            )
           ) : null}
         </span>
-        
-        <span className="w-4 h-4 mr-2 flex items-center justify-center">
+
+        {/* Icon */}
+        <span className="explorer-node-icon">
           {isDir ? (
-            isOpen ? <HiOutlineFolderOpen className="text-aira-accent-2" /> : <HiOutlineFolder className="text-aira-accent-2" />
+            isOpen ? (
+              <HiOutlineFolderOpen className="text-aira-accent-2" />
+            ) : (
+              <HiOutlineFolder className="text-aira-accent-2" />
+            )
+          ) : fileIcon ? (
+            <span className="text-xs">{fileIcon}</span>
           ) : (
             <HiOutlineDocument className="text-aira-text-dim" />
           )}
         </span>
-        
+
+        {/* Name */}
         <span className="truncate">{node.name}</span>
       </div>
 
+      {/* Children */}
       {isDir && isOpen && node.children && (
         <div>
-          {/* Sort: directories first, then files */}
           {[...node.children]
             .sort((a, b) => {
               if (a.type === b.type) return a.name.localeCompare(b.name)
               return a.type === 'directory' ? -1 : 1
             })
-            .map(child => (
+            .map((child) => (
               <FileTreeNode key={child.path} node={child} level={level + 1} />
-            ))
-          }
+            ))}
         </div>
       )}
     </div>
   )
 }
 
+/* ── Main Explorer ── */
 export default function FileExplorer() {
-  const { fileTree, sidebarOpen } = useWorkspaceStore()
+  const {
+    fileTree,
+    sidebarOpen,
+    openFiles,
+    activeFile,
+    setActiveFile,
+    closeFile,
+    unsavedFiles,
+    activeProjectId,
+    refreshTree,
+  } = useWorkspaceStore()
 
   if (!sidebarOpen) return null
 
   return (
-    <div className="w-64 h-full flex flex-col bg-aira-surface-2 border-r border-aira-border overflow-hidden">
-      <div className="flex items-center justify-between px-4 py-3 border-b border-aira-border">
-        <span className="text-xs font-semibold uppercase tracking-wider text-aira-text-dim">
-          Explorer
-        </span>
-      </div>
-      
-      <div className="flex-1 overflow-y-auto py-2">
-        {fileTree.length > 0 ? (
-          fileTree.map((node) => (
-            <FileTreeNode key={node.path} node={node} />
-          ))
-        ) : (
-          <div className="px-4 py-2 text-sm text-aira-text-dim text-center mt-4">
-            No folder opened
+    <div className="explorer-panel">
+      {/* Open Editors Section */}
+      {openFiles.length > 0 && (
+        <div className="explorer-section">
+          <div className="explorer-section-header">
+            <span>OPEN EDITORS</span>
           </div>
-        )}
+          <div className="explorer-open-editors">
+            {openFiles.map((file) => (
+              <div
+                key={file.path}
+                className={`explorer-node ${activeFile?.path === file.path ? 'explorer-node-active' : ''}`}
+                style={{ paddingLeft: '12px' }}
+                onClick={() => setActiveFile(file.path)}
+              >
+                <span className="explorer-node-icon">
+                  {unsavedFiles.has(file.path) ? (
+                    <span className="w-2 h-2 rounded-full bg-aira-accent inline-block" />
+                  ) : (
+                    <HiOutlineDocument className="text-aira-text-dim" />
+                  )}
+                </span>
+                <span className="truncate flex-1 text-xs">{file.name}</span>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    closeFile(file.path)
+                  }}
+                  className="explorer-close-btn"
+                >
+                  ×
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* File Tree Section */}
+      <div className="explorer-section explorer-section-grow">
+        <div className="explorer-section-header">
+          <span>EXPLORER</span>
+          <div className="explorer-section-actions">
+            <button
+              onClick={() => activeProjectId && refreshTree(activeProjectId)}
+              className="explorer-action-btn"
+              title="Refresh"
+            >
+              <HiOutlineRefresh className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        </div>
+        <div className="explorer-tree">
+          {fileTree.length > 0 ? (
+            fileTree.map((node) => <FileTreeNode key={node.path} node={node} />)
+          ) : (
+            <div className="explorer-empty">No folder opened</div>
+          )}
+        </div>
       </div>
     </div>
   )

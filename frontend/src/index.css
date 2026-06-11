@@ -344,3 +344,654 @@ input::placeholder, textarea::placeholder {
   padding-left: 16px;
   color: var(--color-aira-text-muted);
 }
+
+/* ============================================
+   WORKSPACE IDE STYLES
+   ============================================ */
+
+.workspace-root {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+  background: var(--color-aira-bg);
+  color: var(--color-aira-text);
+}
+
+.workspace-main {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+.workspace-center {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+
+.workspace-editor-area {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
+.workspace-editor-container {
+  flex: 1;
+  position: relative;
+}
+
+.workspace-loading, .workspace-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  width: 100vw;
+  background: var(--color-aira-surface);
+}
+
+.workspace-empty-content {
+  text-align: center;
+}
+
+.workspace-empty-icon {
+  color: var(--color-aira-border-light);
+  display: flex;
+  justify-content: center;
+  margin-bottom: 24px;
+}
+
+.workspace-empty-title {
+  font-size: 24px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.workspace-empty-text {
+  color: var(--color-aira-text-dim);
+}
+
+/* ---------- Resize Handles ---------- */
+.resize-handle {
+  transition: background-color 0.15s ease;
+}
+
+.resize-handle:hover, .resize-handle:active {
+  background-color: var(--color-aira-primary) !important;
+  opacity: 1 !important;
+}
+
+/* ---------- Toolbar ---------- */
+.workspace-toolbar {
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 12px;
+  background: var(--color-aira-surface);
+  border-bottom: 1px solid var(--color-aira-border);
+  user-select: none;
+}
+
+.workspace-toolbar-section {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.workspace-toolbar-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  color: var(--color-aira-text-muted);
+  cursor: pointer;
+  background: transparent;
+  border: none;
+  transition: all 0.15s;
+}
+
+.workspace-toolbar-btn:hover {
+  background: var(--color-aira-surface-3);
+  color: var(--color-aira-text);
+}
+
+.workspace-toolbar-btn-active {
+  background: var(--color-aira-primary) !important;
+  color: white !important;
+}
+
+.workspace-toolbar-project {
+  display: flex;
+  align-items: center;
+  margin-left: 8px;
+  padding: 2px 8px;
+  background: var(--color-aira-surface-2);
+  border-radius: 4px;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.workspace-toolbar-breadcrumb {
+  display: flex;
+  align-items: center;
+  font-size: 13px;
+  margin-left: 8px;
+}
+
+.workspace-toolbar-separator {
+  color: var(--color-aira-border-light);
+  margin: 0 6px;
+}
+
+/* ---------- Status Bar ---------- */
+.workspace-statusbar {
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 12px;
+  background: var(--color-aira-primary);
+  color: white;
+  font-size: 12px;
+  user-select: none;
+}
+
+.workspace-statusbar-section {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.workspace-statusbar-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+}
+
+.workspace-statusbar-item:hover {
+  opacity: 0.8;
+}
+
+.workspace-statusbar-branch {
+  font-weight: 600;
+}
+
+.workspace-statusbar-unsaved {
+  font-weight: 600;
+}
+
+/* ---------- Context Menu ---------- */
+.context-menu {
+  background: var(--color-aira-surface-3);
+  border: 1px solid var(--color-aira-border);
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+  padding: 6px;
+  min-width: 180px;
+}
+
+.context-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 12px;
+  font-size: 13px;
+  color: var(--color-aira-text);
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.context-menu-item:hover {
+  background: var(--color-aira-primary);
+  color: white;
+}
+
+.context-menu-item-danger:hover {
+  background: var(--color-aira-error);
+}
+
+.context-menu-separator {
+  height: 1px;
+  background: var(--color-aira-border);
+  margin: 4px 0;
+}
+
+.context-menu-form {
+  padding: 4px;
+}
+
+.context-menu-input {
+  width: 100%;
+  padding: 6px 8px;
+  font-size: 13px;
+  background: var(--color-aira-surface);
+  border: 1px solid var(--color-aira-primary);
+  border-radius: 4px;
+  color: var(--color-aira-text);
+  outline: none;
+  height: auto;
+}
+
+/* ---------- Explorer ---------- */
+.explorer-panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--color-aira-surface-2);
+  border-right: 1px solid var(--color-aira-border);
+}
+
+.explorer-section {
+  display: flex;
+  flex-direction: column;
+}
+
+.explorer-section-grow {
+  flex: 1;
+  min-height: 0;
+}
+
+.explorer-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-aira-text-muted);
+  letter-spacing: 0.05em;
+  user-select: none;
+}
+
+.explorer-section-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.explorer-action-btn {
+  background: transparent;
+  border: none;
+  color: var(--color-aira-text-dim);
+  cursor: pointer;
+  padding: 2px;
+  border-radius: 4px;
+}
+
+.explorer-action-btn:hover {
+  background: var(--color-aira-surface-3);
+  color: var(--color-aira-text);
+}
+
+.explorer-tree {
+  flex: 1;
+  overflow-y: auto;
+  padding: 4px 0;
+}
+
+.explorer-open-editors {
+  padding-bottom: 8px;
+}
+
+.explorer-empty {
+  padding: 16px;
+  text-align: center;
+  color: var(--color-aira-text-dim);
+  font-size: 13px;
+}
+
+.explorer-node {
+  display: flex;
+  align-items: center;
+  padding: 4px 12px;
+  font-size: 13px;
+  color: var(--color-aira-text-muted);
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.1s;
+}
+
+.explorer-node:hover {
+  background: var(--color-aira-surface-3);
+  color: var(--color-aira-text);
+}
+
+.explorer-node-active {
+  background: var(--color-aira-primary) !important;
+  color: white !important;
+}
+
+.explorer-node-chevron {
+  width: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.explorer-node-icon {
+  width: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.explorer-close-btn {
+  background: transparent;
+  border: none;
+  color: currentColor;
+  opacity: 0;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.explorer-node:hover .explorer-close-btn {
+  opacity: 0.5;
+}
+
+.explorer-close-btn:hover {
+  opacity: 1 !important;
+  background: rgba(255,255,255,0.2);
+}
+
+/* ---------- Bottom Panel ---------- */
+.bottom-panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--color-aira-bg);
+  border-top: 1px solid var(--color-aira-border);
+}
+
+.bottom-panel-tabs {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 36px;
+  padding: 0 16px;
+  border-bottom: 1px solid var(--color-aira-border);
+}
+
+.bottom-panel-tabs-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  height: 100%;
+}
+
+.bottom-panel-tab {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 100%;
+  font-size: 12px;
+  text-transform: uppercase;
+  color: var(--color-aira-text-dim);
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+}
+
+.bottom-panel-tab:hover {
+  color: var(--color-aira-text-muted);
+}
+
+.bottom-panel-tab-active {
+  color: var(--color-aira-text);
+  border-bottom-color: var(--color-aira-primary);
+}
+
+.bottom-panel-badge {
+  background: var(--color-aira-surface-3);
+  padding: 2px 6px;
+  border-radius: 12px;
+  font-size: 10px;
+}
+
+.bottom-panel-tabs-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.bottom-panel-action {
+  color: var(--color-aira-text-dim);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.bottom-panel-action:hover {
+  color: var(--color-aira-text);
+}
+
+.bottom-panel-content {
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+}
+
+.bottom-panel-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  gap: 8px;
+  color: var(--color-aira-text-dim);
+  font-size: 13px;
+}
+
+.bottom-panel-terminal, .bottom-panel-problems, .bottom-panel-output {
+  height: 100%;
+  overflow-y: auto;
+  padding: 8px;
+  font-family: var(--font-mono);
+  font-size: 13px;
+}
+
+.terminal-line {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 4px;
+}
+
+.terminal-timestamp {
+  color: var(--color-aira-text-dim);
+  opacity: 0.5;
+}
+
+.terminal-line-error { color: var(--color-aira-error); }
+.terminal-line-success { color: var(--color-aira-success); }
+.terminal-line-warn { color: var(--color-aira-warning); }
+
+.problem-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--color-aira-border);
+}
+
+.problem-message {
+  flex: 1;
+}
+
+.problem-file {
+  color: var(--color-aira-text-dim);
+  opacity: 0.6;
+}
+
+/* ---------- Copilot Panel ---------- */
+.copilot-panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--color-aira-surface-2);
+  border-left: 1px solid var(--color-aira-border);
+}
+
+.copilot-header {
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  border-bottom: 1px solid var(--color-aira-border);
+}
+
+.copilot-header-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--color-aira-text-muted);
+}
+
+.copilot-close-btn {
+  background: transparent;
+  border: none;
+  color: var(--color-aira-text-dim);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+}
+
+.copilot-close-btn:hover {
+  background: var(--color-aira-surface-3);
+  color: var(--color-aira-text);
+}
+
+.copilot-context {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: var(--color-aira-surface);
+  border-bottom: 1px solid var(--color-aira-border);
+  font-size: 12px;
+  color: var(--color-aira-text-dim);
+}
+
+.copilot-actions {
+  padding: 16px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.copilot-action-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px;
+  background: var(--color-aira-surface);
+  border: 1px solid var(--color-aira-border);
+  border-radius: 8px;
+  color: var(--color-aira-text);
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.15s;
+  text-align: left;
+}
+
+.copilot-action-btn:hover:not(:disabled) {
+  border-color: var(--color-aira-primary);
+  background: var(--color-aira-surface-3);
+}
+
+.copilot-action-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.copilot-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.copilot-message {
+  padding: 12px;
+  border-radius: 8px;
+}
+
+.copilot-message-user {
+  background: var(--color-aira-surface);
+  border: 1px solid var(--color-aira-border);
+  align-self: flex-end;
+  max-width: 90%;
+}
+
+.copilot-message-assistant {
+  background: transparent;
+  max-width: 100%;
+}
+
+.copilot-input-area {
+  padding: 16px;
+  background: var(--color-aira-surface);
+  border-top: 1px solid var(--color-aira-border);
+  position: relative;
+}
+
+.copilot-input {
+  width: 100%;
+  background: var(--color-aira-surface-2);
+  border: 1px solid var(--color-aira-border);
+  border-radius: 8px;
+  padding: 10px 40px 10px 12px;
+  font-size: 13px;
+  color: var(--color-aira-text);
+  outline: none;
+  height: 40px;
+}
+
+.copilot-input:focus {
+  border-color: var(--color-aira-primary);
+}
+
+.copilot-send-btn {
+  position: absolute;
+  right: 24px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: var(--color-aira-primary);
+  color: white;
+  border: none;
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.copilot-send-btn:disabled {
+  opacity: 0.5;
+  background: var(--color-aira-surface-3);
+  color: var(--color-aira-text-dim);
+  cursor: not-allowed;
+}
