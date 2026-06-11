@@ -43,3 +43,19 @@ Thumbs.db
 
 # Docker
 docker-compose.override.yml
+
+# Secrets and Confidential Files
+*.pem
+*.key
+*.cert
+*.crt
+credentials.json
+client_secret.json
+service_account.json
+*.sqlite3
+*.db
+*.bak
+secrets/
+secrets.json
+config.json
+.netrc
