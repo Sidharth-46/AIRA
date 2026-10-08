@@ -48,8 +48,16 @@ def create_app():
     # Initialize CORS
     CORS(
         app,
-        resources={r"/api/*": {"origins": app.config.get("CORS_ORIGINS", ["*"])}},
+        resources={
+            r"/api/*": {
+                "origins": [
+                    "https://agentaira.vercel.app",
+                ]
+            }
+        },
+    
         supports_credentials=True,
+    
     )
 
     # Initialize SocketIO
